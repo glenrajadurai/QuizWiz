@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuizWiz - Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background-color: #f4f6f8; }
+        h1 { color: #333; }
+        .card { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        button { background-color: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        ul { list-style-type: none; padding: 0; }
+        li { padding: 8px 0; border-bottom: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+
+<h1>QuizWiz Dashboard</h1>
+
+<div class="card">
+    <h2>Available Quizzes</h2>
+    <button onclick="fetchQuizzes()">Load Quizzes</button>
+    <ul id="quiz-list"></ul>
+</div>
+
+<script>
+    async function fetchQuizzes() {
+        try {
+            const response = await fetch('/api/quizzes'); // Adjust API endpoint path to match QuizController
+            const data = await response.json();
+            const list = document.getElementById('quiz-list');
+            list.innerHTML = '';
+
+            if (data.length === 0) {
+                list.innerHTML = '<li>No quizzes available.</li>';
+                return;
+            }
+
+            data.forEach(quiz => {
+                const li = document.createElement('li');
+                li.textContent = `${quiz.id}: ${quiz.title || quiz.name}`;
+                list.appendChild(li);
+            });
+        } catch (error) {
+            console.error('Error fetching quizzes:', error);
+        }
+    }
+</script>
+</body>
+</html>
