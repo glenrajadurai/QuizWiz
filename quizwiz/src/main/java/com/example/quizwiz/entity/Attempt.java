@@ -1,5 +1,6 @@
 package com.example.quizwiz.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -7,6 +8,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "attempts")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Attempt {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -14,10 +16,12 @@ public class Attempt {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id", nullable = false)
+    @JsonIgnoreProperties({"attempts", "user", "hibernateLazyInitializer", "handler"})
     private Student student;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "quiz_id", nullable = false)
+    @JsonIgnoreProperties({"questions", "hibernateLazyInitializer", "handler"})
     private Quiz quiz;
 
     private LocalDateTime startTime;

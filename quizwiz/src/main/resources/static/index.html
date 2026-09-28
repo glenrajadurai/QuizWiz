@@ -3,49 +3,420 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QuizWiz - Dashboard</title>
+    <title>QuizWiz Portal</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; background-color: #f4f6f8; }
-        h1 { color: #333; }
-        .card { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        button { background-color: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; }
-        button:hover { background-color: #0056b3; }
-        ul { list-style-type: none; padding: 0; }
-        li { padding: 8px 0; border-bottom: 1px solid #ddd; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f0f2f5; color: #333; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { text-align: center; color: #1a73e8; }
+        .card { background: white; padding: 25px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h2 { margin-top: 0; color: #444; border-bottom: 2px solid #1a73e8; padding-bottom: 8px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; }
+        input[type="text"], input[type="password"], input[type="number"], textarea, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        button { background-color: #1a73e8; color: white; border: none; padding: 10px 18px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #1557b0; }
+        .btn-secondary { background-color: #6c757d; }
+        .btn-faculty { background-color: #673ab7; }
+        .btn-faculty:hover { background-color: #512da8; }
+        .btn-danger { background-color: #dc3545; }
+        .quiz-item { padding: 15px; border: 1px solid #e0e0e0; border-radius: 6px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; background: #fafafa; }
+        .option-group { margin: 8px 0; }
+        .score-box { font-size: 1.2rem; font-weight: bold; color: #2e7d32; background: #e8f5e9; padding: 15px; border-radius: 6px; text-align: center; }
+        .question-card { border: 1px dashed #bbb; padding: 15px; border-radius: 6px; margin-bottom: 15px; background: #fafafa; }
+        .user-bar { display: flex; justify-content: space-between; align-items: center; background: #e8f0fe; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #d2e3fc; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 15px; }
+        .tab-btn { background: #e0e0e0; color: #333; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+        .tab-btn.active { background: #1a73e8; color: white; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #f8f9fa; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<h1>QuizWiz Dashboard</h1>
+<div class="container">
+    <h1>QuizWiz Engine</h1>
 
-<div class="card">
-    <h2>Available Quizzes</h2>
-    <button onclick="fetchQuizzes()">Load Quizzes</button>
-    <ul id="quiz-list"></ul>
+    <!-- AUTH CARD -->
+    <div class="card" id="auth-card">
+        <div class="tabs">
+            <button id="tab-login" class="tab-btn active" onclick="switchAuthTab('login')">Login</button>
+            <button id="tab-register" class="tab-btn" onclick="switchAuthTab('register')">Create Account</button>
+        </div>
+
+        <div id="login-form">
+            <h2>Login to QuizWiz</h2>
+            <div class="form-group"><label>Username</label><input type="text" id="login-username" placeholder="Enter username"></div>
+            <div class="form-group"><label>Password</label><input type="password" id="login-password" placeholder="Enter password"></div>
+            <button onclick="login()">Login</button>
+        </div>
+
+        <div id="register-form" style="display: none;">
+            <h2>Create New User</h2>
+            <div class="form-group"><label>Username</label><input type="text" id="reg-username" placeholder="Choose username"></div>
+            <div class="form-group"><label>Password</label><input type="password" id="reg-password" placeholder="Choose password"></div>
+            <div class="form-group"><label>Role</label>
+                <select id="reg-role">
+                    <option value="STUDENT">Student</option>
+                    <option value="FACULTY">Faculty (Professor)</option>
+                </select>
+            </div>
+            <button onclick="register()">Create Account</button>
+        </div>
+    </div>
+
+    <!-- USER SESSION BAR -->
+    <div id="user-bar" class="user-bar" style="display: none;">
+        <span>Logged in as: <strong id="user-display"></strong> (<span id="user-role-display"></span>)</span>
+        <button onclick="logout()" class="btn-danger">Logout</button>
+    </div>
+
+    <!-- 1. CREATE QUIZ SECTION (FACULTY ONLY) -->
+    <div class="card" id="create-quiz-card" style="display: none;">
+        <h2>1. Create a New Quiz (Faculty Portal)</h2>
+        <div class="form-group"><label>Quiz Title</label><input type="text" id="create-title" placeholder="e.g. Java Fundamentals"></div>
+        <div class="form-group"><label>Description</label><input type="text" id="create-desc" placeholder="e.g. Test core concepts"></div>
+        <div class="form-group"><label>Time Limit (Minutes)</label><input type="number" id="create-time" value="5"></div>
+        <hr style="margin: 20px 0; border-top: 1px solid #eee;">
+        <div id="questions-wrapper"></div>
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <button type="button" class="btn-secondary" onclick="addQuestionBlock()">+ Add Question</button>
+            <button type="button" onclick="createQuiz()">Publish to Students</button>
+        </div>
+    </div>
+
+    <!-- 2. QUIZ LIST SECTION -->
+    <div class="card" id="quiz-list-card" style="display: none;">
+        <h2>2. Available Quizzes</h2>
+        <button onclick="loadQuizzes()" class="btn-secondary">Refresh List</button>
+        <div id="quiz-container" style="margin-top: 15px;"></div>
+    </div>
+
+    <!-- 3. PROFESSOR DASHBOARD (FACULTY ONLY) -->
+    <div class="card" id="reports-card" style="display: none;">
+        <h2>Student Scores: <span id="report-quiz-title" style="color: #1a73e8;"></span></h2>
+        <button onclick="document.getElementById('reports-card').style.display='none'" class="btn-secondary">Close Reports</button>
+        <table>
+            <thead>
+            <tr>
+                <th>Attempt ID</th>
+                <th>Student Name</th>
+                <th>Score</th>
+                <th>Status</th>
+            </tr>
+            </thead>
+            <tbody id="reports-table-body">
+            <!-- Data populated dynamically -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 4. ATTEMPT QUIZ SECTION (STUDENT ONLY) -->
+    <div class="card" id="attempt-card" style="display: none;">
+        <h2>Taking Quiz: <span id="active-quiz-title"></span></h2>
+        <div id="questions-container"></div>
+        <button onclick="submitQuiz()" style="background-color: #2e7d32; margin-top: 15px;">Submit Answers</button>
+    </div>
+
+    <!-- 5. RESULT SECTION (STUDENT ONLY) -->
+    <div class="card" id="result-card" style="display: none;">
+        <h2>Quiz Result</h2>
+        <div class="score-box" id="result-box"></div>
+        <button onclick="document.getElementById('result-card').style.display='none'" style="margin-top: 15px;" class="btn-secondary">Close</button>
+    </div>
 </div>
 
 <script>
-    async function fetchQuizzes() {
-        try {
-            const response = await fetch('/api/quizzes'); // Adjust API endpoint path to match QuizController
-            const data = await response.json();
-            const list = document.getElementById('quiz-list');
-            list.innerHTML = '';
+    let currentUser = null;
+    let currentQuiz = null;
+    let currentAttemptId = null;
+    let questionCount = 0;
+    let allQuizzes = [];
 
-            if (data.length === 0) {
-                list.innerHTML = '<li>No quizzes available.</li>';
+    function switchAuthTab(tab) {
+        document.getElementById('login-form').style.display = (tab === 'login') ? 'block' : 'none';
+        document.getElementById('register-form').style.display = (tab === 'register') ? 'block' : 'none';
+        document.getElementById('tab-login').className = (tab === 'login') ? 'tab-btn active' : 'tab-btn';
+        document.getElementById('tab-register').className = (tab === 'register') ? 'tab-btn active' : 'tab-btn';
+    }
+
+    async function register() {
+        const username = document.getElementById('reg-username').value;
+        const password = document.getElementById('reg-password').value;
+        const role = document.getElementById('reg-role').value;
+
+        if (!username || !password) return alert('Please fill in all fields');
+
+        const res = await fetch('/api/v1/users/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password, role })
+        });
+
+        if (res.ok) {
+            alert('Account created successfully! You can now log in.');
+            switchAuthTab('login');
+            document.getElementById('login-username').value = username;
+        } else if (res.status === 409) {
+            alert('Username already exists!');
+        } else {
+            alert('Failed to create account.');
+        }
+    }
+
+    async function login() {
+        const username = document.getElementById('login-username').value;
+        const password = document.getElementById('login-password').value;
+
+        if (!username || !password) return alert('Please enter credentials.');
+
+        const res = await fetch('/api/v1/users/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+
+        if (res.ok) {
+            currentUser = await res.json();
+            localStorage.setItem('quizwiz_user', JSON.stringify(currentUser));
+            applyUserPermissions();
+        } else {
+            alert('Invalid username or password.');
+        }
+    }
+
+    function applyUserPermissions() {
+        const saved = localStorage.getItem('quizwiz_user');
+        if (saved) currentUser = JSON.parse(saved);
+
+        if (!currentUser) {
+            document.getElementById('auth-card').style.display = 'block';
+            document.getElementById('user-bar').style.display = 'none';
+            document.getElementById('create-quiz-card').style.display = 'none';
+            document.getElementById('quiz-list-card').style.display = 'none';
+            return;
+        }
+
+        document.getElementById('auth-card').style.display = 'none';
+        document.getElementById('user-bar').style.display = 'flex';
+        document.getElementById('quiz-list-card').style.display = 'block';
+
+        document.getElementById('user-display').innerText = currentUser.username;
+        document.getElementById('user-role-display').innerText = currentUser.role;
+
+        // Only show quiz creation to Faculty
+        document.getElementById('create-quiz-card').style.display = (currentUser.role === 'FACULTY') ? 'block' : 'none';
+
+        loadQuizzes();
+    }
+
+    function logout() {
+        localStorage.removeItem('quizwiz_user');
+        currentUser = null;
+        location.reload();
+    }
+
+    function addQuestionBlock() {
+        questionCount++;
+        const wrapper = document.getElementById('questions-wrapper');
+        const qDiv = document.createElement('div');
+        qDiv.className = 'question-card';
+        qDiv.innerHTML = `
+            <h3>Question ${questionCount}</h3>
+            <div class="form-group"><input type="text" class="q-text" placeholder="Question Text" required></div>
+            <div class="form-group"><input type="text" class="q-a" placeholder="Option A" required></div>
+            <div class="form-group"><input type="text" class="q-b" placeholder="Option B" required></div>
+            <div class="form-group"><input type="text" class="q-c" placeholder="Option C" required></div>
+            <div class="form-group"><input type="text" class="q-d" placeholder="Option D" required></div>
+            <div class="form-group">
+                <label>Correct Answer</label>
+                <select class="q-correct"><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select>
+            </div>
+        `;
+        wrapper.appendChild(qDiv);
+    }
+
+    async function createQuiz() {
+        const questionBlocks = document.querySelectorAll('.question-card');
+        const questionsList = [];
+
+        questionBlocks.forEach(block => {
+            questionsList.push({
+                questionText: block.querySelector('.q-text').value,
+                optionA: block.querySelector('.q-a').value,
+                optionB: block.querySelector('.q-b').value,
+                optionC: block.querySelector('.q-c').value,
+                optionD: block.querySelector('.q-d').value,
+                correctOption: block.querySelector('.q-correct').value
+            });
+        });
+
+        const payload = {
+            title: document.getElementById('create-title').value,
+            description: document.getElementById('create-desc').value,
+            timeLimitInMinutes: parseInt(document.getElementById('create-time').value),
+            questions: questionsList
+        };
+
+        const res = await fetch('/api/v1/quizzes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            alert('Quiz Published to Students!');
+            document.getElementById('create-title').value = '';
+            document.getElementById('create-desc').value = '';
+            document.getElementById('questions-wrapper').innerHTML = '';
+            questionCount = 0;
+            addQuestionBlock();
+            await loadQuizzes();
+        } else {
+            alert('Error publishing quiz.');
+        }
+    }
+
+    async function loadQuizzes() {
+        const container = document.getElementById('quiz-container');
+        try {
+            const res = await fetch('/api/v1/quizzes');
+            if (!res.ok) return;
+
+            allQuizzes = await res.json();
+            container.innerHTML = '';
+
+            if (allQuizzes.length === 0) {
+                container.innerHTML = '<p style="color: #666;">No quizzes available yet.</p>';
                 return;
             }
 
-            data.forEach(quiz => {
-                const li = document.createElement('li');
-                li.textContent = `${quiz.id}: ${quiz.title || quiz.name}`;
-                list.appendChild(li);
+            allQuizzes.forEach(q => {
+                const div = document.createElement('div');
+                div.className = 'quiz-item';
+
+                // CONDITIONAL BUTTONS: Faculty see "View Scores", Students see "Start Attempt"
+                let actionBtn = '';
+                if (currentUser.role === 'FACULTY') {
+                    actionBtn = `<button class="btn-faculty" onclick="viewScores(${q.id})">View Student Scores</button>`;
+                } else {
+                    actionBtn = `<button onclick="startQuiz(${q.id})">Start Attempt</button>`;
+                }
+
+                div.innerHTML = `
+                    <div>
+                        <strong>ID ${q.id}: ${q.title}</strong> (${q.timeLimitInMinutes} mins)
+                        <br><small>${q.description || ''}</small>
+                    </div>
+                    ${actionBtn}
+                `;
+                container.appendChild(div);
             });
-        } catch (error) {
-            console.error('Error fetching quizzes:', error);
+        } catch (e) { console.error(e); }
+    }
+
+    // --- NEW FEATURE: FACULTY VIEW SCORES ---
+    async function viewScores(quizId) {
+        try {
+            const res = await fetch(`/api/v1/quizzes/${quizId}/reports`);
+            if (!res.ok) return alert('Failed to load reports.');
+
+            const reports = await res.json();
+            const quiz = allQuizzes.find(q => q.id === quizId);
+
+            document.getElementById('report-quiz-title').innerText = quiz ? quiz.title : `Quiz #${quizId}`;
+            const tbody = document.getElementById('reports-table-body');
+            tbody.innerHTML = '';
+
+            if (reports.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#666;">No students have completed this quiz yet.</td></tr>';
+            } else {
+                reports.forEach(r => {
+                    // Extract student name safely depending on how your backend serializes the Attempt entity
+                    let studentName = r.student ? (r.student.name || r.student.email) : `User ID: ${r.studentId || 'Unknown'}`;
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${r.id}</td>
+                        <td><strong>${studentName}</strong></td>
+                        <td style="font-weight: bold; color: #2e7d32;">${r.score !== null ? r.score + '%' : 'Pending'}</td>
+                        <td>${r.status || 'Completed'}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            document.getElementById('reports-card').style.display = 'block';
+            document.getElementById('reports-card').scrollIntoView({ behavior: 'smooth' });
+        } catch (e) {
+            alert('An error occurred while loading scores.');
+            console.error(e);
         }
     }
+
+    async function startQuiz(quizId) {
+        if (!currentUser || !currentUser.id) return alert('Please log in first!');
+
+        try {
+            currentQuiz = allQuizzes.find(q => q.id === quizId);
+            if (!currentQuiz.questions || currentQuiz.questions.length === 0) {
+                return alert('This quiz has no questions available.');
+            }
+
+            const res = await fetch(`/api/v1/quizzes/${quizId}/start?studentId=${currentUser.id}`, { method: 'POST' });
+            if (!res.ok) return alert('Failed to register quiz attempt.');
+
+            const attempt = await res.json();
+            currentAttemptId = attempt.id;
+
+            document.getElementById('active-quiz-title').innerText = currentQuiz.title;
+            const qContainer = document.getElementById('questions-container');
+            qContainer.innerHTML = '';
+
+            currentQuiz.questions.forEach((q, idx) => {
+                const qDiv = document.createElement('div');
+                qDiv.style.margin = "15px 0";
+                qDiv.innerHTML = `
+                    <p><strong>Q${idx + 1}: ${q.questionText}</strong></p>
+                    <div class="option-group"><label><input type="radio" name="q_${q.id}" value="A"> A: ${q.optionA}</label></div>
+                    <div class="option-group"><label><input type="radio" name="q_${q.id}" value="B"> B: ${q.optionB}</label></div>
+                    <div class="option-group"><label><input type="radio" name="q_${q.id}" value="C"> C: ${q.optionC}</label></div>
+                    <div class="option-group"><label><input type="radio" name="q_${q.id}" value="D"> D: ${q.optionD}</label></div>
+                `;
+                qContainer.appendChild(qDiv);
+            });
+
+            document.getElementById('attempt-card').style.display = 'block';
+            document.getElementById('attempt-card').scrollIntoView({ behavior: 'smooth' });
+        } catch (e) { console.error(e); }
+    }
+
+    async function submitQuiz() {
+        const answers = [];
+        currentQuiz.questions.forEach(q => {
+            const selected = document.querySelector(`input[name="q_${q.id}"]:checked`);
+            if (selected) answers.push({ questionId: q.id, selectedOption: selected.value });
+        });
+
+        const res = await fetch(`/api/v1/attempts/${currentAttemptId}/submit`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ answers: answers })
+        });
+
+        if (res.ok) {
+            const result = await res.json();
+            document.getElementById('result-card').style.display = 'block';
+            document.getElementById('result-box').innerHTML = `Score: ${result.score !== null ? result.score : 'Submitted'}% <br> Status: ${result.status}`;
+            document.getElementById('attempt-card').style.display = 'none';
+            document.getElementById('result-card').scrollIntoView({ behavior: 'smooth' });
+        } else {
+            alert('Failed to submit attempt.');
+        }
+    }
+
+    addQuestionBlock();
+    applyUserPermissions();
 </script>
 </body>
 </html>
